@@ -20,10 +20,10 @@
 #define REDUCE_LEN BOARDSIZE/REDUCE_LOCAL
 */
 
-#define BOARDSIZE 128
-#define LOCALSIZE 32
-#define MAX_ITERS 1000
-#define SEED 1336868812 //time(NULL)
+//#define BOARDSIZE 128
+//#define LOCALSIZE 32
+//#define MAX_ITERS 1000
+//#define SEED 1336868812 //time(NULL)
 #define CHECK_ITERS 1
 
 #define REDUCE_LOCAL 2
@@ -33,17 +33,36 @@
 
 using namespace std;
 
-queen * random_board(); //Allocates space
-void print_board(queen * q);
+queen * random_board(int BOARDSIZE); //Allocates space
+void print_board(queen * q,int BOARDSIZE);
 
-int main(){
-  int seed = SEED;
+int main(int argc, char * argv[]){
+  int seed;
+  int BOARDSIZE,LOCALSIZE,MAX_ITERS;
+  if(argc < 4){
+    printf("Please enter: boardsize, localsize, max_iters\n");
+    return 0;
+  }
+
+  BOARDSIZE = atoi(argv[1]);
+  LOCALSIZE = atoi(argv[2]);
+  MAX_ITERS = atoi(argv[3]);
+  //printf("%i,%i,%i\n",BOARDSIZE,LOCALSIZE,MAX_ITERS);
+  if(argc > 4){
+    seed = atoi(argv[4]);
+  }
+  else{
+    seed = time(NULL);
+  }
+
   srand(seed);
   printf("Seed: %u\n",seed);
+  
 
-  queen * queens = random_board(),* curr_q;
+  queen * queens = random_board(BOARDSIZE),* curr_q;
   queen conflicts[REDUCE_LEN],indexes[REDUCE_LEN],all_conflicts[BOARDSIZE];
-  queen zero[BOARDSIZE] = {0};
+  queen zero[BOARDSIZE];
+  memset(zero,0,sizeof(queen)*BOARDSIZE);
   int curr = 0,cf_iters = 0,iters = 0,min_con,min_c;
   int nqueens = BOARDSIZE,group_size=LOCALSIZE,reduce_len=REDUCE_LEN;
   int pseudo_rand;
@@ -150,7 +169,7 @@ int main(){
 
     /*
     printf("Board: %i\n",0);
-    print_board(queens);
+    print_board(queens,BOARDSIZE);
     */
 
     do{
@@ -188,7 +207,7 @@ int main(){
 	      clEnqueueNDRangeKernel(w.commandQueue,
 				     w.kernels["count_conflicts"],
 				     1,0,globalWorkSize,
-				     localWorkSize,0,NULL,NULL),
+				     localWorkSize,0,NULL,&w.events[event_id++]),
 	      "Error enqueueing count kernel");
       //Reduce
       w.check(
@@ -260,7 +279,7 @@ int main(){
       }
       printf("\n");
       printf("Board: %i\n",iters+1);
-      print_board(queens);
+      print_board(queens,BOARDSIZE);
       */
 
       /*
@@ -327,13 +346,13 @@ int main(){
 
   if(done){
     printf("Solved board of size %i in %i iterations.\n",BOARDSIZE,iters);
-    print_board(queens);
+    //print_board(queens,BOARDSIZE);
   }
 
 
 }
 
-queen * random_board(){
+queen * random_board(int BOARDSIZE){
   vector<queen> b(BOARDSIZE);
   for(int i(0); i<BOARDSIZE; i++){b[i] = i;}
   random_shuffle(b.begin(),b.end());
@@ -348,7 +367,7 @@ queen * random_board(){
 }
 
 
-void print_board(queen * queens){
+void print_board(queen * queens,int BOARDSIZE){
   char tmp[BOARDSIZE][BOARDSIZE+1];
   memset(tmp,'.',BOARDSIZE*(BOARDSIZE+1));
 

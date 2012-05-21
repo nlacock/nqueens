@@ -6,8 +6,9 @@
 #define BOARDSIZE 10 //Make sure this is <= MAX inside nqueens.cl
 #define BATCHSIZE 1024
 #define PRESOLVE 3
-#define BUFFSIZE ((PRESOLVE+1)*BATCHSIZE)
 #define LOCALSIZE 128
+
+#define BUFFSIZE ((PRESOLVE+1)*BATCHSIZE)
 
 int unsafe(int y, int * b) {
   int x = b[y];
@@ -25,6 +26,12 @@ int unsafe(int y, int * b) {
 }
 
 int main(){
+  int BOARDSIZE;
+  int BATCHSIZE;
+  int PRESOLVE;
+  int LOCALSIZE;
+
+
   OpenCLWrapper w;
   w.enableProfiling = true;
   cl_int b[BOARDSIZE] = {0};

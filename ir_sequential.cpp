@@ -111,12 +111,12 @@ int main(int argc, char *argv[]){
     w.check(clEnqueueNDRangeKernel(w.commandQueue,
           w.kernels["seq_solve"],
           1,0,globalWorkSize,
-          localWorkSize,0,NULL,NULL),
+          localWorkSize,0,NULL,&w.events[event_id++]),
           "Error enqueueing kernel");
     
     w.check(clEnqueueReadBuffer(w.commandQueue,w.memObjects[0],CL_TRUE,0,
           BOARDSIZE*2*sizeof(cl_int),queens,0,NULL,
-          &w.events[event_id++]),
+          NULL),
           "Error enqueueing read buffer");
 
     w.check(clEnqueueReadBuffer(w.commandQueue,w.memObjects[1],CL_TRUE,0,
