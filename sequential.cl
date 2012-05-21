@@ -18,12 +18,13 @@ int seq_count_conflicts(__global queen *queens, int nqueens, int row, int col)
     //Occupied square
     conflicts += ((row == curr[0]) && (col == curr[1]))*nqueens;
   }
-  return conflicts;
+  return conflicts-1;
 }
 
 __kernel void seq_solve(__global queen *queens,
-    const int nqueens,
-    const int max_iters) 
+			const int nqueens,
+			const int max_iters,
+			__global queen * iters_used) 
 {
   int q = 0;
   int CFIs = 0; 
@@ -34,9 +35,9 @@ __kernel void seq_solve(__global queen *queens,
     int row = queens[q];
     int col = queens[q+1];
     int conflicts = seq_count_conflicts(queens, nqueens, row, col);
-    //conflicts = conflicts - nqueens;
+    conflicts = conflicts - nqueens;
     
-    if (conflicts != nqueens+1)
+    if (conflicts > 0)
     {
       CFIs = 0;
       int r = 0;
@@ -60,6 +61,7 @@ __kernel void seq_solve(__global queen *queens,
     q = (q+2)%(2*nqueens);
     iters += 1;
   }
+  iters_used[0] = iters;
 }
 
 // vim: syntax=c
