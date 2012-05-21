@@ -142,6 +142,7 @@ int main(int argc, char *argv[]){
         "Error getting event profile information");
 
     std::cout << "Profiling time sequential execution on GPU:" << ": " << (run_end - run_start) << std::endl;
+    std::cout << "Average time/iter:" << ": " << (run_end - run_start)/iters << std::endl;
 
 
     /*
