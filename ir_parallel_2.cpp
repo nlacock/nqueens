@@ -20,10 +20,10 @@
 #define REDUCE_LEN BOARDSIZE/REDUCE_LOCAL
 */
 
-#define BOARDSIZE 128
-#define LOCALSIZE 4
-#define MAX_ITERS 1000
-#define SEED 1336868812 //time(NULL)
+//#define BOARDSIZE 128
+//#define LOCALSIZE 4
+//#define MAX_ITERS 1000
+//#define SEED 1336868812 //time(NULL)
 #define CHECK_ITERS 1
 
 #define REDUCE_LOCAL 2
@@ -33,22 +33,41 @@
 
 using namespace std;
 
-queen * random_board(); //Allocates space
-void print_board(queen * q);
 
-int main(){
-  int seed = SEED;
+queen * random_board(int BOARDSIZE); //Allocates space
+void print_board(queen * q,int BOARDSIZE);
+
+int main(int argc, char * argv[]){
+  int seed;
+  int BOARDSIZE,LOCALSIZE,MAX_ITERS;
+  if(argc < 4){
+    printf("Please enter: boardsize, localsize, max_iters\n");
+    return 0;
+  }
+
+  BOARDSIZE = atoi(argv[1]);
+  LOCALSIZE = atoi(argv[2]);
+  MAX_ITERS = atoi(argv[3]);
+  //printf("%i,%i,%i\n",BOARDSIZE,LOCALSIZE,MAX_ITERS);
+  if(argc > 4){
+    seed = atoi(argv[4]);
+  }
+  else{
+    seed = time(NULL);
+  }
+
   srand(seed);
   printf("Seed: %u\n",seed);
 
-  queen * queens = random_board(),* curr_q;
+  queen * queens = random_board(BOARDSIZE),* curr_q;
   queen conflicts[REDUCE_LEN],indexes[REDUCE_LEN],all_conflicts[BOARDSIZE];
-  queen zero[BOARDSIZE] = {0};
+  queen zero[BOARDSIZE];
+  memset(zero,0,sizeof(queen)*BOARDSIZE);
   int curr = 0,cf_iters = 0,iters = 0,min_con,min_c;
   int nqueens = BOARDSIZE,group_size=LOCALSIZE,reduce_len=REDUCE_LEN;
-  int pseudo_rand;
+  int pseudo_rand,event_id=0;
   OpenCLWrapper w;
-  //w.enableProfiling = true;
+  w.enableProfiling = true;
   
   size_t globalWorkSize[2] = {BOARDSIZE,BOARDSIZE};
   size_t localWorkSize[2] = {LOCALSIZE,LOCALSIZE};  
@@ -148,7 +167,7 @@ int main(){
 
 
     //printf("Board: %i\n",0);
-    //print_board(queens);
+    //print_board(queens,BOARDSIZE);
 
 
     do{
@@ -186,7 +205,7 @@ int main(){
 	      clEnqueueNDRangeKernel(w.commandQueue,
 				     w.kernels["count_conflicts"],
 				     2,0,globalWorkSize,
-				     localWorkSize,0,NULL,NULL),
+				     localWorkSize,0,NULL,&w.events[event_id++]),
 	      "Error enqueueing count kernel");
       //Reduce
       w.check(
@@ -260,7 +279,7 @@ int main(){
 
       printf("\n");
       printf("Board: %i\n",iters+1);
-      print_board(queens);
+      print_board(queens,BOARDSIZE);
 
       */
 
@@ -276,16 +295,45 @@ int main(){
      w.cleanup();
      return 1;    
    }   
-
+  
+  //Profiling
+  cl_ulong start,end,diff;
+  unsigned long max=0,min=-1,total=0;
+  float avg; int k;
+  printf("%i events\n",event_id);
+  for(k = 0; k<event_id; k++){
+    w.check(clGetEventProfilingInfo(w.events[k],CL_PROFILING_COMMAND_START,
+				    sizeof(cl_ulong),&start,NULL),
+	    "Error getting profiling info");
+    w.check(clGetEventProfilingInfo(w.events[k],CL_PROFILING_COMMAND_END,
+				    sizeof(cl_ulong),&end,NULL),
+	    "Error getting profiling info");
+    diff = end-start;
+    total += diff;
+    avg += (float)(diff)/(float)(event_id);
+    if(diff > max){
+      max = diff;
+    }
+    if(diff < min){
+      min = diff;
+    }
+  }
+  
+  printf("Total GPU computation time: %lu ns\n",total);
+  printf("Average kernel execution time: %f ns\n",avg);
+  printf("Max kernel execution time: %lu ns\n",max);
+  printf("Min kernel execution time: %lu ns\n",min);
+  
+  
   if(done){
     printf("Solved board of size %i in %i iterations.\n",BOARDSIZE,iters);
-    print_board(queens);
+    //print_board(queens,BOARDSIZE);
   }
-
+  
 
 }
 
-queen * random_board(){
+queen * random_board(int BOARDSIZE){
   vector<queen> b(BOARDSIZE);
   for(int i(0); i<BOARDSIZE; i++){b[i] = i;}
   random_shuffle(b.begin(),b.end());
@@ -300,7 +348,7 @@ queen * random_board(){
 }
 
 
-void print_board(queen * queens){
+void print_board(queen * queens,int BOARDSIZE){
   char tmp[BOARDSIZE][BOARDSIZE+1];
   memset(tmp,'.',BOARDSIZE*(BOARDSIZE+1));
 
