@@ -8,6 +8,8 @@ CC = gcc
 
 ALL = ir_parallel ir_parallel_2 ir_sequential
 
+all: $(ALL)
+
 ir_parallel: ir_parallel.cpp
 	$(CXX) -o $@ $^ $(CXX_FLAGS)
 
