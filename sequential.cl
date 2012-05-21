@@ -24,6 +24,7 @@ int seq_count_conflicts(__global queen *queens, int nqueens, int row, int col)
 __kernel void seq_solve(__global queen *queens,
 			const int nqueens,
 			const int max_iters,
+      const int rand,
 			__global queen * iters_used) 
 {
   int q = 0;
@@ -48,7 +49,8 @@ __kernel void seq_solve(__global queen *queens,
       {
         int c;
         c = seq_count_conflicts(queens, nqueens, r, col);
-        if (c < min_value )
+        if (c < min_value || 
+          (c == min_value && rand))
         {
           min_value = c;
           min_square_r = r;
