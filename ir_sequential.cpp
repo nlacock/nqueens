@@ -18,13 +18,14 @@ queen * random_board(); //Allocates space
 void print_board(queen * q);
 
 int main(){
-  srand(15);
+  srand(time(NULL));
 
   queen * queens = random_board(),* curr_q;
   queen conflicts[BOARDSIZE] = {0};
   queen zero[BOARDSIZE] = {0};
   int curr = 0,cf_iters = 0,iters = 0,min_con,min_c;
   int nqueens = BOARDSIZE;
+  int max = MAX_ITERS;
   OpenCLWrapper w;
   //w.enableProfiling = true;
   
@@ -48,17 +49,27 @@ int main(){
 				  CL_MEM_USE_HOST_PTR | CL_MEM_READ_WRITE,
 				  sizeof(queen)*BOARDSIZE*2,
 				  queens,NULL));
+    //Iters taken
+    w.addMemObject(clCreateBuffer(w.context,
+				  CL_MEM_READ_WRITE,
+				  sizeof(queen),
+				  NULL,NULL));
     
     w.check(clSetKernelArg(w.kernels["seq_solve"],0,sizeof(cl_mem),
 			   &w.memObjects[0]), "Error setting kernel arg 0");
 
     w.check(clSetKernelArg(w.kernels["seq_solve"],1,sizeof(cl_int),
 			   &nqueens), "Error setting kernel arg 1");
-    int max = MAX_ITERS;
-    printf("Max iterations: %d\n", max);
-    fflush(stdout);
     w.check(clSetKernelArg(w.kernels["seq_solve"],2,sizeof(cl_int),
           &max), "Error setting kernel arg 2");
+
+    w.check(clSetKernelArg(w.kernels["seq_solve"],3,sizeof(cl_mem),
+			   &w.memObjects[1]), "Error setting kernel arg 0");
+
+
+
+    printf("Max iterations: %d\n", max);
+    fflush(stdout);
 
     w.check(clEnqueueWriteBuffer(w.commandQueue,w.memObjects[0],
           CL_FALSE,0,2*BOARDSIZE*sizeof(queen),
@@ -75,8 +86,13 @@ int main(){
           BOARDSIZE*2*sizeof(cl_int),queens,0,NULL,
           NULL),
           "Error enqueueing read buffer");
-    
-    printf("TESTING\n");
+
+    w.check(clEnqueueReadBuffer(w.commandQueue,w.memObjects[1],CL_TRUE,0,
+          sizeof(cl_int),&iters,0,NULL,
+          NULL),
+          "Error enqueueing read buffer");    
+
+    printf("Solved in %i iters\n",iters);
     print_board(queens);
     fflush(stdout);
 
