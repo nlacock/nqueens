@@ -231,7 +231,15 @@ int main(int argc, char * argv[]){
 				    NULL),
 		"Error enqueueing read buffer");
 	//printf("cf_iters: %i\n",cf_iters);
-	if(cf_iters >= BOARDSIZE){
+	if(cf_iters > iters){
+	  w.check(
+		  clEnqueueWriteBuffer(w.commandQueue,w.memObjects[4],
+				       CL_TRUE,0,sizeof(queen),
+				       zero,0,NULL,NULL),
+		  "Error enqueueing write buffer");
+	  
+	}
+	else if(cf_iters >= BOARDSIZE){
 	  w.check(
 		  clEnqueueReadBuffer(w.commandQueue,w.memObjects[0],CL_TRUE,0,
 				  BOARDSIZE*2*sizeof(cl_int),queens,0,NULL,

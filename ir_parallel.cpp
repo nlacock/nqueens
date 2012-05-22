@@ -47,7 +47,7 @@ int main(int argc, char * argv[]){
   BOARDSIZE = atoi(argv[1]);
   LOCALSIZE = atoi(argv[2]);
   MAX_ITERS = atoi(argv[3]);
-  //printf("%i,%i,%i\n",BOARDSIZE,LOCALSIZE,MAX_ITERS);
+
   if(argc > 4){
     seed = atoi(argv[4]);
   }
@@ -232,8 +232,15 @@ int main(int argc, char * argv[]){
 				    sizeof(cl_int),&cf_iters,0,NULL,
 				    NULL),
 		"Error enqueueing read buffer");
+	if(cf_iters > BOARDSIZE){
+	  w.check(
+		  clEnqueueWriteBuffer(w.commandQueue,w.memObjects[4],
+				       CL_TRUE,0,sizeof(queen),
+				       zero,0,NULL,NULL),
+		  "Error enqueueing write buffer");	  
+	}
 	//printf("cf_iters: %i\n",cf_iters);
-	if(cf_iters >= BOARDSIZE){
+	else if(cf_iters >= BOARDSIZE){
 	  w.check(
 		  clEnqueueReadBuffer(w.commandQueue,w.memObjects[0],CL_TRUE,0,
 				  BOARDSIZE*2*sizeof(cl_int),queens,0,NULL,
